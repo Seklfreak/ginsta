@@ -4,6 +4,7 @@ import (
 	"context"
 	"encoding/json"
 	"errors"
+	"time"
 )
 
 func (g *Ginsta) PostsByID(ctx context.Context, id string) ([]*Post, error) {
@@ -40,7 +41,7 @@ func (g *Ginsta) PostsByID(ctx context.Context, id string) ([]*Post, error) {
 		post := &Post{
 			ID:        item.Node.ID,
 			Shortcode: item.Node.Shortcode,
-			TakenAt:   item.Node.TakenAtTimestamp,
+			TakenAt:   time.Unix(item.Node.TakenAtTimestamp, 0).UTC(),
 			Comment:   item.Node.EdgeMediaToComment.Count,
 			Likes:     item.Node.EdgeMediaPreviewLike.Count,
 			MediaURLs: []string{item.Node.DisplayURL},
@@ -85,8 +86,8 @@ type postsData struct {
 						EdgeMediaToComment struct {
 							Count int `json:"count"`
 						} `json:"edge_media_to_comment"`
-						CommentsDisabled bool `json:"comments_disabled"`
-						TakenAtTimestamp int  `json:"taken_at_timestamp"`
+						CommentsDisabled bool  `json:"comments_disabled"`
+						TakenAtTimestamp int64 `json:"taken_at_timestamp"`
 						Dimensions       struct {
 							Height int `json:"height"`
 							Width  int `json:"width"`

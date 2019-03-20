@@ -4,6 +4,7 @@ import (
 	"context"
 	"encoding/json"
 	"errors"
+	"time"
 )
 
 func (g *Ginsta) PostByShortcode(ctx context.Context, shortcode string) (*Post, error) {
@@ -36,7 +37,7 @@ func (g *Ginsta) PostByShortcode(ctx context.Context, shortcode string) (*Post, 
 	respPost := &Post{
 		ID:        post.EntryData.PostPage[0].Graphql.ShortcodeMedia.ID,
 		Shortcode: post.EntryData.PostPage[0].Graphql.ShortcodeMedia.Shortcode,
-		TakenAt:   post.EntryData.PostPage[0].Graphql.ShortcodeMedia.TakenAtTimestamp,
+		TakenAt:   time.Unix(post.EntryData.PostPage[0].Graphql.ShortcodeMedia.TakenAtTimestamp, 0).UTC(),
 		MediaURLs: getMediaURLs(&post),
 		Comment:   post.EntryData.PostPage[0].Graphql.ShortcodeMedia.EdgeMediaToComment.Count,
 		Likes:     post.EntryData.PostPage[0].Graphql.ShortcodeMedia.EdgeMediaPreviewLike.Count,
@@ -54,7 +55,7 @@ type Post struct {
 	ID        string
 	Shortcode string
 	Caption   string
-	TakenAt   int
+	TakenAt   time.Time
 	MediaURLs []string
 	Comment   int
 	Likes     int
@@ -115,7 +116,7 @@ type postSharedData struct {
 					EdgeMediaToComment struct {
 						Count int `json:"count"`
 					} `json:"edge_media_to_comment"`
-					TakenAtTimestamp     int `json:"taken_at_timestamp"`
+					TakenAtTimestamp     int64 `json:"taken_at_timestamp"`
 					EdgeMediaPreviewLike struct {
 						Count int `json:"count"`
 					} `json:"edge_media_preview_like"`
