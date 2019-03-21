@@ -4,6 +4,7 @@ import (
 	"context"
 	"encoding/json"
 	"errors"
+	"time"
 )
 
 func (g *Ginsta) StoriesByID(ctx context.Context, id string) ([]*Story, error) {
@@ -39,7 +40,7 @@ func (g *Ginsta) StoriesByID(ctx context.Context, id string) ([]*Story, error) {
 	for _, item := range stories.Data.ReelsMedia[0].Items {
 		story := &Story{
 			ID:      item.ID,
-			TakenAt: item.TakenAtTimestamp,
+			TakenAt: time.Unix(item.TakenAtTimestamp, 0).UTC(),
 			Video:   false,
 		}
 
@@ -70,7 +71,7 @@ type Story struct {
 	ID        string
 	MediaURLs []string
 	Video     bool
-	TakenAt   int
+	TakenAt   time.Time
 }
 
 type storiesData struct {
@@ -88,7 +89,7 @@ type storiesData struct {
 				IsVideo          bool              `json:"is_video"`
 				VideoDuration    float64           `json:"video_duration,omitempty"`
 				VideoResources   []displayResource `json:"video_resources,omitempty"`
-				TakenAtTimestamp int               `json:"taken_at_timestamp"`
+				TakenAtTimestamp int64             `json:"taken_at_timestamp"`
 			} `json:"items"`
 		} `json:"reels_media"`
 	} `json:"data"`
