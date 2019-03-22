@@ -32,11 +32,16 @@ func (g *Ginsta) StoriesByID(ctx context.Context, id string) ([]*Story, error) {
 		return nil, err
 	}
 
-	if len(stories.Data.ReelsMedia) == 0 {
+	if stories.Status != "ok" {
 		return nil, errors.New("failure parsing stories")
 	}
 
 	var respondStories []*Story
+
+	if len(stories.Data.ReelsMedia) == 0 {
+		return respondStories, nil
+	}
+
 	for _, item := range stories.Data.ReelsMedia[0].Items {
 		story := &Story{
 			ID:      item.ID,
@@ -58,10 +63,6 @@ func (g *Ginsta) StoriesByID(ctx context.Context, id string) ([]*Story, error) {
 		}
 
 		respondStories = append(respondStories, story)
-	}
-
-	if len(respondStories) == 0 {
-		return nil, errors.New("failure parsing story items")
 	}
 
 	return respondStories, nil

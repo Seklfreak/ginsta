@@ -32,11 +32,16 @@ func (g *Ginsta) PostsByID(ctx context.Context, id string) ([]*Post, error) {
 		return nil, err
 	}
 
-	if len(posts.Data.User.EdgeOwnerToTimelineMedia.Edges) == 0 {
+	if posts.Status != "ok" {
 		return nil, errors.New("failure parsing posts")
 	}
 
 	var respondPosts []*Post
+
+	if len(posts.Data.User.EdgeOwnerToTimelineMedia.Edges) == 0 {
+		return respondPosts, nil
+	}
+
 	for _, item := range posts.Data.User.EdgeOwnerToTimelineMedia.Edges {
 		post := &Post{
 			ID:        item.Node.ID,
