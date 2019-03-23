@@ -21,7 +21,7 @@ func (g *Ginsta) UserByUsername(ctx context.Context, username string) (*User, er
 			Shortcode:  item.Node.Shortcode,
 			Title:      item.Node.Title,
 			DisplayURL: item.Node.DisplayURL,
-			TakentAt:   time.Unix(item.Node.TakenAtTimestamp, 0),
+			TakenAt:    time.Unix(item.Node.TakenAtTimestamp, 0),
 			Comments:   item.Node.EdgeMediaToComment.Count,
 			Likes:      item.Node.EdgeLikedBy.Count,
 			Published:  item.Node.IsPublished,
@@ -98,7 +98,7 @@ type Video struct {
 	Title      string
 	Caption    string
 	DisplayURL string
-	TakentAt   time.Time
+	TakenAt    time.Time
 	Comments   int
 	Likes      int
 	Published  bool
