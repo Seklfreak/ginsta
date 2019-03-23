@@ -4,12 +4,35 @@ import (
 	"context"
 	"encoding/json"
 	"errors"
+	"time"
 )
 
 func (g *Ginsta) UserByUsername(ctx context.Context, username string) (*User, error) {
 	profile, err := g.userRawProfileByUsername(ctx, username)
 	if err != nil {
 		return nil, err
+	}
+
+	var videos []*Video
+	for _, item := range profile.EntryData.ProfilePage[0].Graphql.User.EdgeFelixVideoTimeline.Edges {
+		video := &Video{
+			Product:    item.Node.ProductType,
+			ID:         item.Node.ID,
+			Shortcode:  item.Node.Shortcode,
+			Title:      item.Node.Title,
+			DisplayURL: item.Node.DisplayURL,
+			TakentAt:   time.Unix(item.Node.TakenAtTimestamp, 0),
+			Comments:   item.Node.EdgeMediaToComment.Count,
+			Likes:      item.Node.EdgeLikedBy.Count,
+			Published:  item.Node.IsPublished,
+			Duration:   item.Node.VideoDuration,
+		}
+
+		if len(item.Node.EdgeMediaToCaption.Edges) > 0 {
+			video.Caption = item.Node.EdgeMediaToCaption.Edges[0].Node.Text
+		}
+
+		videos = append(videos, video)
 	}
 
 	return &User{
@@ -21,6 +44,7 @@ func (g *Ginsta) UserByUsername(ctx context.Context, username string) (*User, er
 		ProfilePicURL: profile.EntryData.ProfilePage[0].Graphql.User.ProfilePicURLHd,
 		Followers:     profile.EntryData.ProfilePage[0].Graphql.User.EdgeFollowedBy.Count,
 		Followings:    profile.EntryData.ProfilePage[0].Graphql.User.EdgeFollow.Count,
+		Videos:        videos,
 	}, nil
 }
 
@@ -64,6 +88,21 @@ type User struct {
 	ProfilePicURL string
 	Followers     int
 	Followings    int
+	Videos        []*Video
+}
+
+type Video struct {
+	Product    string
+	ID         string
+	Shortcode  string
+	Title      string
+	Caption    string
+	DisplayURL string
+	TakentAt   time.Time
+	Comments   int
+	Likes      int
+	Published  bool
+	Duration   float64
 }
 
 type profileSharedData struct {
@@ -77,12 +116,41 @@ type profileSharedData struct {
 					EdgeFollow struct {
 						Count int `json:"count"`
 					} `json:"edge_follow"`
-					FullName        string `json:"full_name"`
-					ID              string `json:"id"`
-					IsPrivate       bool   `json:"is_private"`
-					IsVerified      bool   `json:"is_verified"`
-					ProfilePicURLHd string `json:"profile_pic_url_hd"`
-					Username        string `json:"username"`
+					FullName               string `json:"full_name"`
+					ID                     string `json:"id"`
+					IsPrivate              bool   `json:"is_private"`
+					IsVerified             bool   `json:"is_verified"`
+					ProfilePicURLHd        string `json:"profile_pic_url_hd"`
+					Username               string `json:"username"`
+					EdgeFelixVideoTimeline struct {
+						Count int `json:"count"`
+						Edges []struct {
+							Node struct {
+								Typename           string `json:"__typename"`
+								ID                 string `json:"id"`
+								EdgeMediaToCaption struct {
+									Edges []struct {
+										Node struct {
+											Text string `json:"text"`
+										} `json:"node"`
+									} `json:"edges"`
+								} `json:"edge_media_to_caption"`
+								Shortcode          string `json:"shortcode"`
+								EdgeMediaToComment struct {
+									Count int `json:"count"`
+								} `json:"edge_media_to_comment"`
+								TakenAtTimestamp int64  `json:"taken_at_timestamp"`
+								DisplayURL       string `json:"display_url"`
+								EdgeLikedBy      struct {
+									Count int `json:"count"`
+								} `json:"edge_liked_by"`
+								IsPublished   bool    `json:"is_published"`
+								ProductType   string  `json:"product_type"`
+								Title         string  `json:"title"`
+								VideoDuration float64 `json:"video_duration"`
+							} `json:"node"`
+						} `json:"edges"`
+					} `json:"edge_felix_video_timeline"`
 				} `json:"user"`
 			} `json:"graphql"`
 		} `json:"ProfilePage"`
