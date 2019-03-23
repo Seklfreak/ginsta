@@ -35,13 +35,15 @@ func (g *Ginsta) PostByShortcode(ctx context.Context, shortcode string) (*Post, 
 	}
 
 	respPost := &Post{
-		ID:        post.EntryData.PostPage[0].Graphql.ShortcodeMedia.ID,
-		Shortcode: post.EntryData.PostPage[0].Graphql.ShortcodeMedia.Shortcode,
-		TakenAt:   time.Unix(post.EntryData.PostPage[0].Graphql.ShortcodeMedia.TakenAtTimestamp, 0).UTC(),
-		MediaURLs: getMediaURLs(&post),
-		Comment:   post.EntryData.PostPage[0].Graphql.ShortcodeMedia.EdgeMediaToComment.Count,
-		Likes:     post.EntryData.PostPage[0].Graphql.ShortcodeMedia.EdgeMediaPreviewLike.Count,
-		Video:     post.EntryData.PostPage[0].Graphql.ShortcodeMedia.IsVideo,
+		ID:             post.EntryData.PostPage[0].Graphql.ShortcodeMedia.ID,
+		Shortcode:      post.EntryData.PostPage[0].Graphql.ShortcodeMedia.Shortcode,
+		TakenAt:        time.Unix(post.EntryData.PostPage[0].Graphql.ShortcodeMedia.TakenAtTimestamp, 0).UTC(),
+		MediaURLs:      getMediaURLs(&post),
+		Comment:        post.EntryData.PostPage[0].Graphql.ShortcodeMedia.EdgeMediaToComment.Count,
+		Likes:          post.EntryData.PostPage[0].Graphql.ShortcodeMedia.EdgeMediaPreviewLike.Count,
+		Video:          post.EntryData.PostPage[0].Graphql.ShortcodeMedia.IsVideo,
+		AuthorID:       post.EntryData.PostPage[0].Graphql.ShortcodeMedia.Owner.ID,
+		AuthorUsername: post.EntryData.PostPage[0].Graphql.ShortcodeMedia.Owner.Username,
 	}
 
 	if len(post.EntryData.PostPage[0].Graphql.ShortcodeMedia.EdgeMediaToCaption.Edges) > 0 {
@@ -52,14 +54,16 @@ func (g *Ginsta) PostByShortcode(ctx context.Context, shortcode string) (*Post, 
 }
 
 type Post struct {
-	ID        string
-	Shortcode string
-	Caption   string
-	TakenAt   time.Time
-	MediaURLs []string
-	Comment   int
-	Likes     int
-	Video     bool
+	ID             string
+	Shortcode      string
+	Caption        string
+	TakenAt        time.Time
+	MediaURLs      []string
+	Comment        int
+	Likes          int
+	Video          bool
+	AuthorID       string
+	AuthorUsername string
 }
 
 func getMediaURLs(post *postSharedData) []string {
@@ -135,6 +139,10 @@ type postSharedData struct {
 							} `json:"node"`
 						} `json:"edges"`
 					} `json:"edge_sidecar_to_children"`
+					Owner struct {
+						ID       string `json:"id"`
+						Username string `json:"username"`
+					} `json:"owner"`
 				} `json:"shortcode_media"`
 			} `json:"graphql"`
 		} `json:"PostPage"`
