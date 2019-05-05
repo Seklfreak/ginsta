@@ -82,6 +82,11 @@ func getMediaURLs(post *postSharedData) []string {
 
 	if len(post.EntryData.PostPage[0].Graphql.ShortcodeMedia.EdgeSidecarToChildren.Edges) > 0 {
 		for _, item := range post.EntryData.PostPage[0].Graphql.ShortcodeMedia.EdgeSidecarToChildren.Edges {
+			if item.Node.VideoURL != "" {
+				urls = append(urls, item.Node.VideoURL)
+				continue
+			}
+
 			urls = append(urls, getBestDisplayResource(item.Node.DisplayResources))
 		}
 
@@ -136,6 +141,7 @@ type postSharedData struct {
 								} `json:"dimensions"`
 								DisplayResources []displayResource `json:"display_resources"`
 								IsVideo          bool              `json:"is_video"`
+								VideoURL         string            `json:"video_url"`
 							} `json:"node"`
 						} `json:"edges"`
 					} `json:"edge_sidecar_to_children"`
