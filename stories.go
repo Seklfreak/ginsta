@@ -4,6 +4,7 @@ import (
 	"context"
 	"encoding/json"
 	"errors"
+	"fmt"
 	"time"
 )
 
@@ -12,7 +13,8 @@ func (g *Ginsta) StoriesByID(ctx context.Context, id string) ([]*Story, error) {
 
 	gis, err := g.gis(ctx, data)
 	if err != nil {
-		return nil, err
+		// TODO: logger
+		fmt.Printf("unable to generate gis, trying without: %s\n", err.Error())
 	}
 
 	body, err := g.request(
