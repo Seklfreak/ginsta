@@ -54,7 +54,7 @@ func (g *Ginsta) userRawProfileByUsername(ctx context.Context, username string) 
 		g.client,
 		endpointProfile(username),
 		"",
-		false,
+		true,
 	)
 	if err != nil {
 		return nil, err

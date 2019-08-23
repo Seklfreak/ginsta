@@ -4,24 +4,17 @@ import (
 	"context"
 	"encoding/json"
 	"errors"
-	"fmt"
 	"time"
 )
 
 func (g *Ginsta) PostsByID(ctx context.Context, id string) ([]*Post, error) {
-	endpoint, data := endpointPosts(id)
-
-	gis, err := g.gis(ctx, data)
-	if err != nil {
-		// TODO: logger
-		fmt.Printf("unable to generate gis, trying without: %s\n", err.Error())
-	}
+	endpoint, _ := endpointPosts(id)
 
 	body, err := g.request(
 		ctx,
 		g.client,
 		endpoint,
-		gis,
+		"",
 		false,
 	)
 	if err != nil {
