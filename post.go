@@ -8,10 +8,12 @@ import (
 )
 
 func (g *Ginsta) PostByShortcode(ctx context.Context, shortcode string) (*Post, error) {
+	endpoint, _ := endpointPost(shortcode)
+
 	body, err := g.request(
 		ctx,
 		g.client,
-		endpointPost(shortcode),
+		endpoint,
 		"",
 		false,
 	)
@@ -19,35 +21,30 @@ func (g *Ginsta) PostByShortcode(ctx context.Context, shortcode string) (*Post, 
 		return nil, err
 	}
 
-	sharedData, err := extractSharedData(string(body))
-	if err != nil {
-		return nil, err
-	}
-
 	var post postSharedData
-	err = json.Unmarshal([]byte(sharedData), &post)
+	err = json.Unmarshal([]byte(body), &post)
 	if err != nil {
 		return nil, err
 	}
 
-	if len(post.EntryData.PostPage) == 0 {
-		return nil, errors.New("failure parsing post")
+	if post.Status != "ok" {
+		return nil, errors.New("failure parsing posts")
 	}
 
 	respPost := &Post{
-		ID:             post.EntryData.PostPage[0].Graphql.ShortcodeMedia.ID,
-		Shortcode:      post.EntryData.PostPage[0].Graphql.ShortcodeMedia.Shortcode,
-		TakenAt:        time.Unix(post.EntryData.PostPage[0].Graphql.ShortcodeMedia.TakenAtTimestamp, 0).UTC(),
+		ID:             post.Data.ShortcodeMedia.ID,
+		Shortcode:      post.Data.ShortcodeMedia.Shortcode,
+		TakenAt:        time.Unix(post.Data.ShortcodeMedia.TakenAtTimestamp, 0).UTC(),
 		MediaURLs:      getMediaURLs(&post),
-		Comment:        post.EntryData.PostPage[0].Graphql.ShortcodeMedia.EdgeMediaToComment.Count,
-		Likes:          post.EntryData.PostPage[0].Graphql.ShortcodeMedia.EdgeMediaPreviewLike.Count,
-		Video:          post.EntryData.PostPage[0].Graphql.ShortcodeMedia.IsVideo,
-		AuthorID:       post.EntryData.PostPage[0].Graphql.ShortcodeMedia.Owner.ID,
-		AuthorUsername: post.EntryData.PostPage[0].Graphql.ShortcodeMedia.Owner.Username,
+		Comment:        post.Data.ShortcodeMedia.EdgeMediaToComment.Count,
+		Likes:          post.Data.ShortcodeMedia.EdgeMediaPreviewLike.Count,
+		Video:          post.Data.ShortcodeMedia.IsVideo,
+		AuthorID:       post.Data.ShortcodeMedia.Owner.ID,
+		AuthorUsername: post.Data.ShortcodeMedia.Owner.Username,
 	}
 
-	if len(post.EntryData.PostPage[0].Graphql.ShortcodeMedia.EdgeMediaToCaption.Edges) > 0 {
-		respPost.Caption = post.EntryData.PostPage[0].Graphql.ShortcodeMedia.EdgeMediaToCaption.Edges[0].Node.Text
+	if len(post.Data.ShortcodeMedia.EdgeMediaToCaption.Edges) > 0 {
+		respPost.Caption = post.Data.ShortcodeMedia.EdgeMediaToCaption.Edges[0].Node.Text
 	}
 
 	return respPost, nil
@@ -68,20 +65,17 @@ type Post struct {
 
 func getMediaURLs(post *postSharedData) []string {
 	var urls []string
-	if len(post.EntryData.PostPage) == 0 {
-		return urls
-	}
 
-	if post.EntryData.PostPage[0].Graphql.ShortcodeMedia.VideoURL != "" {
+	if post.Data.ShortcodeMedia.VideoURL != "" {
 		urls = append(urls,
-			post.EntryData.PostPage[0].Graphql.ShortcodeMedia.VideoURL,
+			post.Data.ShortcodeMedia.VideoURL,
 		)
 
 		return urls
 	}
 
-	if len(post.EntryData.PostPage[0].Graphql.ShortcodeMedia.EdgeSidecarToChildren.Edges) > 0 {
-		for _, item := range post.EntryData.PostPage[0].Graphql.ShortcodeMedia.EdgeSidecarToChildren.Edges {
+	if len(post.Data.ShortcodeMedia.EdgeSidecarToChildren.Edges) > 0 {
+		for _, item := range post.Data.ShortcodeMedia.EdgeSidecarToChildren.Edges {
 			if item.Node.VideoURL != "" {
 				urls = append(urls, item.Node.VideoURL)
 				continue
@@ -93,9 +87,9 @@ func getMediaURLs(post *postSharedData) []string {
 		return urls
 	}
 
-	if len(post.EntryData.PostPage[0].Graphql.ShortcodeMedia.DisplayResources) > 0 {
+	if len(post.Data.ShortcodeMedia.DisplayResources) > 0 {
 		urls = append(urls, getBestDisplayResource(
-			post.EntryData.PostPage[0].Graphql.ShortcodeMedia.DisplayResources,
+			post.Data.ShortcodeMedia.DisplayResources,
 		))
 
 		return urls
@@ -106,51 +100,48 @@ func getMediaURLs(post *postSharedData) []string {
 }
 
 type postSharedData struct {
-	EntryData struct {
-		PostPage []struct {
-			Graphql struct {
-				ShortcodeMedia struct {
-					ID                 string            `json:"id"`
-					Shortcode          string            `json:"shortcode"`
-					DisplayResources   []displayResource `json:"display_resources"`
-					VideoURL           string            `json:"video_url"`
-					IsVideo            bool              `json:"is_video"`
-					EdgeMediaToCaption struct {
-						Edges []struct {
-							Node struct {
-								Text string `json:"text"`
-							} `json:"node"`
-						} `json:"edges"`
-					} `json:"edge_media_to_caption"`
-					EdgeMediaToComment struct {
-						Count int `json:"count"`
-					} `json:"edge_media_to_comment"`
-					TakenAtTimestamp     int64 `json:"taken_at_timestamp"`
-					EdgeMediaPreviewLike struct {
-						Count int `json:"count"`
-					} `json:"edge_media_preview_like"`
-					EdgeSidecarToChildren struct {
-						Edges []struct {
-							Node struct {
-								Typename   string `json:"__typename"`
-								ID         string `json:"id"`
-								Shortcode  string `json:"shortcode"`
-								Dimensions struct {
-									Height int `json:"height"`
-									Width  int `json:"width"`
-								} `json:"dimensions"`
-								DisplayResources []displayResource `json:"display_resources"`
-								IsVideo          bool              `json:"is_video"`
-								VideoURL         string            `json:"video_url"`
-							} `json:"node"`
-						} `json:"edges"`
-					} `json:"edge_sidecar_to_children"`
-					Owner struct {
-						ID       string `json:"id"`
-						Username string `json:"username"`
-					} `json:"owner"`
-				} `json:"shortcode_media"`
-			} `json:"graphql"`
-		} `json:"PostPage"`
-	} `json:"entry_data"`
+	Data struct {
+		ShortcodeMedia struct {
+			ID                 string            `json:"id"`
+			Shortcode          string            `json:"shortcode"`
+			DisplayResources   []displayResource `json:"display_resources"`
+			VideoURL           string            `json:"video_url"`
+			IsVideo            bool              `json:"is_video"`
+			EdgeMediaToCaption struct {
+				Edges []struct {
+					Node struct {
+						Text string `json:"text"`
+					} `json:"node"`
+				} `json:"edges"`
+			} `json:"edge_media_to_caption"`
+			EdgeMediaToComment struct {
+				Count int `json:"count"`
+			} `json:"edge_media_to_comment"`
+			TakenAtTimestamp     int64 `json:"taken_at_timestamp"`
+			EdgeMediaPreviewLike struct {
+				Count int `json:"count"`
+			} `json:"edge_media_preview_like"`
+			EdgeSidecarToChildren struct {
+				Edges []struct {
+					Node struct {
+						Typename   string `json:"__typename"`
+						ID         string `json:"id"`
+						Shortcode  string `json:"shortcode"`
+						Dimensions struct {
+							Height int `json:"height"`
+							Width  int `json:"width"`
+						} `json:"dimensions"`
+						DisplayResources []displayResource `json:"display_resources"`
+						IsVideo          bool              `json:"is_video"`
+						VideoURL         string            `json:"video_url"`
+					} `json:"node"`
+				} `json:"edges"`
+			} `json:"edge_sidecar_to_children"`
+			Owner struct {
+				ID       string `json:"id"`
+				Username string `json:"username"`
+			} `json:"owner"`
+		} `json:"shortcode_media"`
+	} `json:"data"`
+	Status string `json:"status"`
 }

@@ -3,9 +3,9 @@ package ginsta
 import (
 	"context"
 	"encoding/json"
-	"errors"
-	"fmt"
 	"time"
+
+	"github.com/pkg/errors"
 )
 
 func (g *Ginsta) PostsByID(ctx context.Context, id string) ([]*Post, error) {
@@ -55,11 +55,9 @@ func (g *Ginsta) PostsByID(ctx context.Context, id string) ([]*Post, error) {
 
 		if item.Node.Typename == "GraphSidecar" ||
 			item.Node.Typename == "GraphVideo" {
-			postDetailed, err := g.PostByShortcode(ctx, item.Node.Shortcode)
+			post, err = g.PostByShortcode(ctx, item.Node.Shortcode)
 			if err != nil {
-				fmt.Printf("failure loading post %s, post will have less metadata\n", item.Node.Shortcode)
-			} else {
-				post = postDetailed
+				return nil, errors.Wrapf(err, "failure looking up post details for post %s", item.Node.Shortcode)
 			}
 		}
 

@@ -15,8 +15,17 @@ var (
 		return fmt.Sprintf("https://www.instagram.com/%s/", username)
 	}
 
-	endpointPost = func(shortcode string) string {
-		return fmt.Sprintf("https://www.instagram.com/p/%s/", shortcode)
+	endpointPost = func(shortcode string) (string, string) {
+		data := struct {
+			Shortcode string `json:"shortcode"`
+		}{
+			Shortcode: shortcode,
+		}
+
+		marshalled, _ := json.Marshal(data)
+
+		return "https://www.instagram.com/graphql/query/?query_hash=55a3c4bad29e4e20c20ff4cdfd80f5b4&variables=" +
+			url.QueryEscape(string(marshalled)), string(marshalled)
 	}
 
 	endpointPosts = func(id string) (string, string) {
