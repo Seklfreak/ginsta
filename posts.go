@@ -39,6 +39,7 @@ func (g *Ginsta) PostsByID(ctx context.Context, id string) ([]*Post, error) {
 		return respondPosts, nil
 	}
 
+	var doNotTryDetails bool
 	for _, item := range posts.Data.User.EdgeOwnerToTimelineMedia.Edges {
 		post := &Post{
 			ID:        item.Node.ID,
@@ -54,10 +55,11 @@ func (g *Ginsta) PostsByID(ctx context.Context, id string) ([]*Post, error) {
 			post.Caption = item.Node.EdgeMediaToCaption.Edges[0].Node.Text
 		}
 
-		if item.Node.Typename == "GraphSidecar" ||
-			item.Node.Typename == "GraphVideo" {
+		if (item.Node.Typename == "GraphSidecar" ||
+			item.Node.Typename == "GraphVideo") && !doNotTryDetails {
 			postDetailed, err := g.PostByShortcode(ctx, item.Node.Shortcode)
 			if err != nil {
+				doNotTryDetails = true
 				fmt.Printf("failure loading post %s, post will have less metadata\n", item.Node.Shortcode)
 			} else {
 				post = postDetailed
