@@ -22,7 +22,7 @@ func (g *Ginsta) PostByShortcode(ctx context.Context, shortcode string) (*Post, 
 	}
 
 	var post postSharedData
-	err = json.Unmarshal([]byte(body), &post)
+	err = json.Unmarshal(body, &post)
 	if err != nil {
 		return nil, err
 	}
