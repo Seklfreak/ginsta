@@ -4,6 +4,7 @@ import (
 	"context"
 	"encoding/json"
 	"errors"
+	"fmt"
 	"time"
 )
 
@@ -54,9 +55,11 @@ func (g *Ginsta) PostsByID(ctx context.Context, id string) ([]*Post, error) {
 
 		if item.Node.Typename == "GraphSidecar" ||
 			item.Node.Typename == "GraphVideo" {
-			post, err = g.PostByShortcode(ctx, item.Node.Shortcode)
+			postDetailed, err := g.PostByShortcode(ctx, item.Node.Shortcode)
 			if err != nil {
-				return nil, err
+				fmt.Printf("failure loading post %s, post will have less metadata\n", item.Node.Shortcode)
+			} else {
+				post = postDetailed
 			}
 		}
 
