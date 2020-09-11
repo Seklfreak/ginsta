@@ -7,7 +7,7 @@ import (
 )
 
 const (
-	userAgent = "Instagram 10.26.0 (iPhone7,2; iOS 10_1_1; en_US; en-US; scale=2.00; gamut=normal; 750x1334) AppleWebKit/420+"
+	userAgent = "Mozilla/5.0 (compatible; Discordbot/2.0; +https://discordapp.com)"
 )
 
 var (
